@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reputation Risk Intelligence | Company Monitoring</title>
+    <style>
+        :root {
+            --crisis: #dc2626;
+            --alert: #ea580c;
+            --investigate: #f59e0b;
+            --monitor: #eab308;
+            --noise: #84cc16;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header h1 .icon {
+            font-size: 1.8rem;
+        }
+
+        .company-name {
+            color: var(--accent);
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active { background: #22c55e; }
+        .status-dot.warning { background: var(--alert); }
+        .status-dot.danger { background: var(--crisis); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Controls Section */
+        .controls {
+            background: var(--bg-card);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .controls-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .control-group label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, select {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            min-width: 180px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .btn-demo {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-demo:hover {
+            background: #047857;
+        }
+
+        .btn-danger {
+            background: var(--crisis);
+            color: white;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--accent);
+        }
+
+        .filter-chip.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .filter-chip input {
+            display: none;
+        }
+
+        .filter-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .stat-card.crisis .value { color: var(--crisis); }
+        .stat-card.alert .value { color: var(--alert); }
+        .stat-card.investigate .value { color: var(--investigate); }
+
+        /* Threats Container */
+        .threats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .threats-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sort-select {
+            min-width: 150px;
+        }
+
+        .threats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Threat Card */
+        .threat-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .threat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .threat-card.crisis { border-left: 4px solid var(--crisis); }
+        .threat-card.alert { border-left: 4px solid var(--alert); }
+        .threat-card.investigate { border-left: 4px solid var(--investigate); }
+        .threat-card.monitor { border-left: 4px solid var(--monitor); }
+        .threat-card.noise { border-left: 4px solid var(--noise); }
+
+        .threat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1rem 1.5rem;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .threat-score-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .risk-score {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .crisis .risk-score { color: var(--crisis); }
+        .alert .risk-score { color: var(--alert); }
+        .investigate .risk-score { color: var(--investigate); }
+        .monitor .risk-score { color: var(--monitor); }
+        .noise .risk-score { color: var(--noise); }
+
+        .risk-label {
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .risk-label.crisis { background: var(--crisis); }
+        .risk-label.alert { background: var(--alert); }
+        .risk-label.investigate { background: var(--investigate); color: #000; }
+        .risk-label.monitor { background: var(--monitor); color: #000; }
+        .risk-label.noise { background: var(--noise); color: #000; }
+
+        .threat-meta {
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .urgency-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 0.3rem;
+        }
+
+        .urgency-badge.immediate { background: var(--crisis); }
+        .urgency-badge.same_day { background: var(--alert); }
+        .urgency-badge.this_week { background: var(--monitor); color: #000; }
+        .urgency-badge.monitor { background: var(--noise); color: #000; }
+
+        .threat-type-bar {
+            padding: 0.5rem 1.5rem;
+            background: rgba(0,0,0,0.1);
+            font-size: 0.85rem;
+            display: flex;
+            gap: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .threat-type-bar strong {
+            color: var(--text-primary);
+        }
+
+        .tweet-content {
+            padding: 1.5rem;
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .author-name {
+            font-weight: 600;
+        }
+
+        .author-verified {
+            color: var(--accent);
+        }
+
+        .author-handle {
+            color: var(--text-secondary);
+        }
+
+        .author-followers {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .tweet-text {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .tweet-engagement {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .engagement-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Agent Analysis */
+        .agent-analysis {
+            padding: 0 1.5rem 1rem;
+        }
+
+        .analysis-section {
+            margin-bottom: 0.5rem;
+        }
+
+        .analysis-section summary {
+            cursor: pointer;
+            padding: 0.8rem 1rem;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .analysis-section summary:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .analysis-section[open] summary {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .analysis-content {
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0 0 6px 6px;
+            font-size: 0.9rem;
+        }
+
+        .analysis-row {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .analysis-label {
+            color: var(--text-secondary);
+            min-width: 140px;
+        }
+
+        .analysis-value {
+            flex: 1;
+        }
+
+        .stakeholder-grid {
+            display: grid;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .stakeholder-item {
+            background: var(--bg-dark);
+            padding: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .stakeholder-name {
+            font-weight: 600;
+            text-transform: capitalize;
+            margin-bottom: 0.3rem;
+        }
+
+        .impact-level {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .impact-level.high, .impact-level.critical { background: var(--crisis); }
+        .impact-level.medium { background: var(--alert); }
+        .impact-level.low { background: var(--monitor); color: #000; }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            padding: 0.2rem 0.6rem;
+            background: var(--bg-card-hover);
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* Actions */
+        .threat-actions {
+            display: flex;
+            gap: 0.8rem;
+            padding: 1rem 1.5rem;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid var(--border);
+        }
+
+        .threat-actions button {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Score Breakdown */
+        .score-breakdown {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .score-item {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .score-item strong {
+            color: var(--text-primary);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Monitoring Status */
+        .monitoring-status {
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .monitoring-status.active {
+            border-color: var(--accent);
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .control-row {
+                flex-direction: column;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            input, select {
+                width: 100%;
+            }
+
+            .threat-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .threat-meta {
+                text-align: left;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>
+                <span class="icon">🛡️</span>
+                Reputation Risk Monitor: <span class="company-name" id="activeCompany">Not Monitoring</span>
+            </h1>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Idle</span>
+                </div>
+                <div class="status-item">
+                    Active Threats: <strong id="threatCount">0</strong>
+                </div>
+                <div class="status-item">
+                    Highest Risk: <strong id="maxRisk">0</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Controls -->
+    <section class="controls">
+        <div class="controls-content">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>Company Name</label>
+                    <input type="text" id="companyInput" placeholder="e.g., Tesla, Boeing, Meta">
+                </div>
+                <div class="control-group">
+                    <label>Additional Keywords (comma-separated)</label>
+                    <input type="text" id="keywordsInput" placeholder="@handle, #hashtag">
+                </div>
+                <div class="control-group">
+                    <label>Focus Area</label>
+                    <select id="focusArea">
+                        <option value="">All Risk Types</option>
+                        <option value="product_safety">Product Safety</option>
+                        <option value="data_privacy">Data & Privacy</option>
+                        <option value="executive_misconduct">Executive Misconduct</option>
+                        <option value="labor_practices">Labor Practices</option>
+                        <option value="environmental">Environmental</option>
+                        <option value="financial_misconduct">Financial Misconduct</option>
+                        <option value="regulatory">Regulatory</option>
+                        <option value="customer_harm">Customer Harm</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Tweet Count</label>
+                    <select id="tweetCount">
+                        <option value="20">20 tweets</option>
+                        <option value="50">50 tweets</option>
+                        <option value="100">100 tweets</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="startMonitoring()">Start Monitor</button>
+                <button class="btn-demo" onclick="loadDemo()">Load Demo Data</button>
+                <button class="btn-danger" onclick="clearData()">Clear All</button>
+            </div>
+
+            <div class="filters">
+                <div class="filter-chip active" data-level="crisis">
+                    <input type="checkbox" checked>
+                    <span class="filter-dot" style="background: var(--crisis)"></span>
+                    Crisis (86-100)
+                </div>
+                <div class="filter-chip active" data-level="alert">
+                    <input type="checkbox" checked>
+                    <span class="filter-dot" style="background: var(--alert)"></span>
+                    Alert (71-85)
+                </div>
+                <div class="filter-chip active" data-level="investigate">
+                    <input type="checkbox" checked>
+                    <span class="filter-dot" style="background: var(--investigate)"></span>
+                    Investigate (51-70)
+                </div>
+                <div class="filter-chip" data-level="monitor">
+                    <input type="checkbox">
+                    <span class="filter-dot" style="background: var(--monitor)"></span>
+                    Monitor (26-50)
+                </div>
+                <div class="filter-chip" data-level="noise">
+                    <input type="checkbox">
+                    <span class="filter-dot" style="background: var(--noise)"></span>
+                    Noise (0-25)
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Monitoring Status -->
+        <div class="monitoring-status" id="monitoringStatus" style="display: none;">
+            <div class="status-header">
+                <span id="monitorStatusText">Monitoring...</span>
+                <span id="monitorProgress">0/0 tweets analyzed</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card crisis">
+                <div class="value" id="crisisCount">0</div>
+                <div class="label">Crisis</div>
+            </div>
+            <div class="stat-card alert">
+                <div class="value" id="alertCount">0</div>
+                <div class="label">Alert</div>
+            </div>
+            <div class="stat-card investigate">
+                <div class="value" id="investigateCount">0</div>
+                <div class="label">Investigate</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="escalatedCount">0</div>
+                <div class="label">Escalated</div>
+            </div>
+        </div>
+
+        <!-- Threats Header -->
+        <div class="threats-header">
+            <h2>Active Threats</h2>
+            <select class="sort-select" id="sortBy" onchange="refreshThreats()">
+                <option value="score">Sort by Risk Score</option>
+                <option value="time">Sort by Time</option>
+                <option value="engagement">Sort by Engagement</option>
+            </select>
+        </div>
+
+        <!-- Threats Container -->
+        <div class="threats-container" id="threatsContainer">
+            <div class="empty-state">
+                <div class="icon">🔍</div>
+                <h3>No Active Threats</h3>
+                <p>Start monitoring a company or load demo data to see reputation risks.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // API base URL
+        const API_BASE = '';
+
+        // State
+        let activeSession = null;
+        let pollInterval = null;
+        let activeFilters = ['crisis', 'alert', 'investigate'];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFilterChips();
+            refreshThreats();
+            refreshStats();
+        });
+
+        // Filter chip handlers
+        function setupFilterChips() {
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    chip.classList.toggle('active');
+                    const level = chip.dataset.level;
+                    if (chip.classList.contains('active')) {
+                        if (!activeFilters.includes(level)) {
+                            activeFilters.push(level);
+                        }
+                    } else {
+                        activeFilters = activeFilters.filter(f => f !== level);
+                    }
+                    refreshThreats();
+                });
+            });
+        }
+
+        // Start monitoring
+        async function startMonitoring() {
+            const company = document.getElementById('companyInput').value.trim();
+            if (!company) {
+                alert('Please enter a company name');
+                return;
+            }
+
+            const keywords = document.getElementById('keywordsInput').value
+                .split(',')
+                .map(k => k.trim())
+                .filter(k => k);
+
+            const focusArea = document.getElementById('focusArea').value;
+            const tweetCount = parseInt(document.getElementById('tweetCount').value);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/monitor/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company_name: company,
+                        keywords: keywords,
+                        tweet_count: tweetCount,
+                        focus_areas: focusArea ? [focusArea] : []
+                    })
+                });
+
+                const data = await response.json();
+                activeSession = data.session_id;
+
+                document.getElementById('activeCompany').textContent = company;
+                document.getElementById('statusDot').className = 'status-dot active';
+                document.getElementById('statusText').textContent = 'Monitoring';
+
+                // Show monitoring status
+                document.getElementById('monitoringStatus').style.display = 'block';
+                document.getElementById('monitoringStatus').classList.add('active');
+
+                // Start polling for status
+                startPolling();
+
+            } catch (error) {
+                console.error('Error starting monitoring:', error);
+                alert('Failed to start monitoring. Check if the server is running.');
+            }
+        }
+
+        // Poll for monitoring status
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                if (!activeSession) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE}/api/monitor/status/${activeSession}`);
+                    const status = await response.json();
+
+                    updateMonitoringStatus(status);
+
+                    if (status.status === 'completed' || status.status === 'error') {
+                        clearInterval(pollInterval);
+                        document.getElementById('monitoringStatus').classList.remove('active');
+
+                        if (status.status === 'error') {
+                            alert(`Monitoring error: ${status.error}`);
+                        }
+
+                        refreshThreats();
+                        refreshStats();
+                    }
+
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 1000);
+        }
+
+        // Update monitoring status display
+        function updateMonitoringStatus(status) {
+            const statusText = {
+                'starting': 'Starting...',
+                'fetching': 'Fetching tweets...',
+                'analyzing': 'Analyzing with AI agents...',
+                'completed': 'Completed',
+                'error': 'Error'
+            };
+
+            document.getElementById('monitorStatusText').textContent = statusText[status.status] || status.status;
+            document.getElementById('monitorProgress').textContent =
+                `${status.tweets_analyzed}/${status.tweets_fetched} tweets analyzed | ${status.threats_found} threats found`;
+
+            const progress = status.tweets_fetched > 0
+                ? (status.tweets_analyzed / status.tweets_fetched) * 100
+                : 0;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+
+            // Refresh threats periodically during analysis
+            if (status.status === 'analyzing') {
+                refreshThreats();
+            }
+        }
+
+        // Load demo data
+        async function loadDemo() {
+            try {
+                document.getElementById('activeCompany').textContent = 'Tesla (Demo)';
+                document.getElementById('statusDot').className = 'status-dot active';
+                document.getElementById('statusText').textContent = 'Loading Demo...';
+
+                const response = await fetch(`${API_BASE}/api/demo/load`, { method: 'POST' });
+                const data = await response.json();
+
+                document.getElementById('statusText').textContent = 'Demo Loaded';
+
+                refreshThreats();
+                refreshStats();
+
+            } catch (error) {
+                console.error('Error loading demo:', error);
+                alert('Failed to load demo data. Check if the server is running.');
+            }
+        }
+
+        // Clear all data
+        async function clearData() {
+            if (!confirm('Clear all threats and monitoring data?')) return;
+
+            try {
+                await fetch(`${API_BASE}/api/demo/clear`, { method: 'DELETE' });
+
+                document.getElementById('activeCompany').textContent = 'Not Monitoring';
+                document.getElementById('statusDot').className = 'status-dot';
+                document.getElementById('statusText').textContent = 'Idle';
+                document.getElementById('monitoringStatus').style.display = 'none';
+
+                refreshThreats();
+                refreshStats();
+
+            } catch (error) {
+                console.error('Error clearing data:', error);
+            }
+        }
+
+        // Refresh threats list
+        async function refreshThreats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/threats/active?min_score=0`);
+                const data = await response.json();
+
+                // Filter by active risk levels
+                const filtered = data.threats.filter(t =>
+                    activeFilters.includes(t.risk_score.risk_level)
+                );
+
+                // Sort
+                const sortBy = document.getElementById('sortBy').value;
+                filtered.sort((a, b) => {
+                    if (sortBy === 'score') return b.risk_score.total_score - a.risk_score.total_score;
+                    if (sortBy === 'time') return new Date(b.timestamp) - new Date(a.timestamp);
+                    if (sortBy === 'engagement') {
+                        const engA = a.tweet_data.metrics.likes + a.tweet_data.metrics.retweets;
+                        const engB = b.tweet_data.metrics.likes + b.tweet_data.metrics.retweets;
+                        return engB - engA;
+                    }
+                    return 0;
+                });
+
+                renderThreats(filtered);
+
+                // Update header stats
+                document.getElementById('threatCount').textContent = data.count;
+                if (data.threats.length > 0) {
+                    const maxScore = Math.max(...data.threats.map(t => t.risk_score.total_score));
+                    document.getElementById('maxRisk').textContent = maxScore;
+                }
+
+            } catch (error) {
+                console.error('Error fetching threats:', error);
+            }
+        }
+
+        // Refresh stats
+        async function refreshStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                const stats = await response.json();
+
+                document.getElementById('crisisCount').textContent = stats.by_risk_level.crisis || 0;
+                document.getElementById('alertCount').textContent = stats.by_risk_level.alert || 0;
+                document.getElementById('investigateCount').textContent = stats.by_risk_level.investigate || 0;
+                document.getElementById('escalatedCount').textContent = stats.escalated_count || 0;
+
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        // Render threats
+        function renderThreats(threats) {
+            const container = document.getElementById('threatsContainer');
+
+            if (threats.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <h3>No Active Threats</h3>
+                        <p>Start monitoring a company or load demo data to see reputation risks.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = threats.map(threat => renderThreatCard(threat)).join('');
+        }
+
+        // Render single threat card
+        function renderThreatCard(threat) {
+            const riskLevel = threat.risk_score.risk_level;
+            const urgency = threat.amplification_analysis.recommended_response_window || 'monitor';
+            const tweet = threat.tweet_data;
+            const author = tweet.author || {};
+
+            return `
+                <div class="threat-card ${riskLevel}" data-id="${threat.id}">
+                    <div class="threat-header">
+                        <div class="threat-score-section">
+                            <span class="risk-score">${Math.round(threat.risk_score.total_score)}</span>
+                            <div>
+                                <span class="risk-label ${riskLevel}">${riskLevel.toUpperCase()}</span>
+                                <div class="score-breakdown">
+                                    <span class="score-item">Threat: <strong>${threat.risk_score.breakdown.threat}</strong></span>
+                                    <span class="score-item">Stakeholder: <strong>${threat.risk_score.breakdown.stakeholder}</strong></span>
+                                    <span class="score-item">Amplification: <strong>${threat.risk_score.breakdown.amplification}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="threat-meta">
+                            <div>${formatTime(threat.timestamp)}</div>
+                            <span class="urgency-badge ${urgency}">${urgency.replace('_', ' ')}</span>
+                        </div>
+                    </div>
+
+                    <div class="threat-type-bar">
+                        <span>Type: <strong>${formatThreatType(threat.threat_analysis.threat_type)}</strong></span>
+                        <span>Stage: <strong>${threat.amplification_analysis.current_stage || 'unknown'}</strong></span>
+                        <span>Media Pickup: <strong>${Math.round((threat.amplification_analysis.media_pickup_probability || 0) * 100)}%</strong></span>
+                    </div>
+
+                    <div class="tweet-content">
+                        <div class="author-info">
+                            <span class="author-name">${author.name || 'Unknown'}</span>
+                            ${author.verified ? '<span class="author-verified">✓</span>' : ''}
+                            <span class="author-handle">@${author.username || 'unknown'}</span>
+                            <span class="author-followers">${formatNumber(author.followers_count || 0)} followers</span>
+                        </div>
+                        <p class="tweet-text">${tweet.text || ''}</p>
+                        <div class="tweet-engagement">
+                            <span class="engagement-item">🔁 ${formatNumber(tweet.metrics?.retweets || 0)}</span>
+                            <span class="engagement-item">❤️ ${formatNumber(tweet.metrics?.likes || 0)}</span>
+                            <span class="engagement-item">💬 ${formatNumber(tweet.metrics?.replies || 0)}</span>
+                        </div>
+                    </div>
+
+                    <div class="agent-analysis">
+                        <details class="analysis-section">
+                            <summary>🎯 Threat Analysis</summary>
+                            <div class="analysis-content">
+                                ${renderThreatAnalysis(threat.threat_analysis)}
+                            </div>
+                        </details>
+
+                        <details class="analysis-section">
+                            <summary>👥 Stakeholder Impact</summary>
+                            <div class="analysis-content">
+                                ${renderStakeholderAnalysis(threat.stakeholder_analysis)}
+                            </div>
+                        </details>
+
+                        <details class="analysis-section">
+                            <summary>📈 Amplification Risk</summary>
+                            <div class="analysis-content">
+                                ${renderAmplificationAnalysis(threat.amplification_analysis)}
+                            </div>
+                        </details>
+                    </div>
+
+                    <div class="threat-actions">
+                        <button class="btn-primary" onclick="escalateThreat('${threat.id}')">Escalate to Team</button>
+                        <button class="btn-secondary" onclick="viewTweet('${tweet.url}')">View Tweet</button>
+                        <button class="btn-secondary" onclick="markFalsePositive('${threat.id}')">False Positive</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render threat analysis
+        function renderThreatAnalysis(analysis) {
+            if (!analysis) return '<p>No analysis available</p>';
+
+            return `
+                <div class="analysis-row">
+                    <span class="analysis-label">Claim Summary:</span>
+                    <span class="analysis-value">${analysis.claim_summary || 'N/A'}</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Credibility:</span>
+                    <span class="analysis-value">
+                        <span class="impact-level ${analysis.credibility || 'medium'}">${(analysis.credibility || 'medium').toUpperCase()}</span>
+                    </span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Entities at Risk:</span>
+                    <span class="analysis-value">
+                        <div class="tags">
+                            ${(analysis.entities_at_risk || []).map(e => `<span class="tag">${e}</span>`).join('')}
+                        </div>
+                    </span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Severity Signals:</span>
+                    <span class="analysis-value">
+                        <div class="tags">
+                            ${(analysis.severity_indicators || []).map(s => `<span class="tag">${s}</span>`).join('')}
+                        </div>
+                    </span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Reasoning:</span>
+                    <span class="analysis-value">${analysis.reasoning || 'N/A'}</span>
+                </div>
+            `;
+        }
+
+        // Render stakeholder analysis
+        function renderStakeholderAnalysis(analysis) {
+            if (!analysis) return '<p>No analysis available</p>';
+
+            const stakeholders = analysis.impact_by_stakeholder || {};
+
+            return `
+                <div class="analysis-row">
+                    <span class="analysis-label">Primary Groups:</span>
+                    <span class="analysis-value">
+                        <div class="tags">
+                            ${(analysis.primary_stakeholders || []).map(s => `<span class="tag">${s}</span>`).join('')}
+                        </div>
+                    </span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Overall Reach:</span>
+                    <span class="analysis-value">${analysis.overall_stakeholder_reach || 'N/A'}</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Financial Impact:</span>
+                    <span class="analysis-value">
+                        <span class="impact-level ${analysis.financial_materiality || 'medium'}">${(analysis.financial_materiality || 'medium').toUpperCase()}</span>
+                    </span>
+                </div>
+                <div class="stakeholder-grid">
+                    ${Object.entries(stakeholders).map(([name, info]) => `
+                        <div class="stakeholder-item">
+                            <div class="stakeholder-name">
+                                ${name}
+                                <span class="impact-level ${info.impact_level || 'medium'}">${(info.impact_level || 'medium').toUpperCase()}</span>
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.85rem;">
+                                <strong>Action Risk:</strong> ${info.action_risk || 'N/A'}<br>
+                                ${info.reasoning || ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Render amplification analysis
+        function renderAmplificationAnalysis(analysis) {
+            if (!analysis) return '<p>No analysis available</p>';
+
+            return `
+                <div class="analysis-row">
+                    <span class="analysis-label">Amplification Score:</span>
+                    <span class="analysis-value"><strong>${analysis.amplification_score || 0}</strong> / 100</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Escalation Path:</span>
+                    <span class="analysis-value">${formatEscalationPath(analysis.escalation_pathway)}</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Time to Peak:</span>
+                    <span class="analysis-value">${analysis.time_to_peak || 'Unknown'}</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Media Pickup:</span>
+                    <span class="analysis-value">${Math.round((analysis.media_pickup_probability || 0) * 100)}% likely</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Current Stage:</span>
+                    <span class="analysis-value">${analysis.current_stage || 'unknown'}</span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Tipping Points:</span>
+                    <span class="analysis-value">
+                        <div class="tags">
+                            ${(analysis.tipping_point_factors || []).map(f => `<span class="tag">${f}</span>`).join('')}
+                        </div>
+                    </span>
+                </div>
+                <div class="analysis-row">
+                    <span class="analysis-label">Reasoning:</span>
+                    <span class="analysis-value">${analysis.reasoning || 'N/A'}</span>
+                </div>
+            `;
+        }
+
+        // Action handlers
+        async function escalateThreat(id) {
+            const notes = prompt('Add notes for the team (optional):');
+            if (notes === null) return; // Cancelled
+
+            try {
+                await fetch(`${API_BASE}/api/threats/${id}/escalate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes })
+                });
+                alert('Threat escalated to team');
+                refreshThreats();
+                refreshStats();
+            } catch (error) {
+                console.error('Error escalating:', error);
+            }
+        }
+
+        function viewTweet(url) {
+            if (url) window.open(url, '_blank');
+        }
+
+        async function markFalsePositive(id) {
+            if (!confirm('Mark this as a false positive? It will be removed from the list.')) return;
+
+            try {
+                await fetch(`${API_BASE}/api/threats/${id}/false-positive`, { method: 'POST' });
+                refreshThreats();
+                refreshStats();
+            } catch (error) {
+                console.error('Error marking false positive:', error);
+            }
+        }
+
+        // Utility functions
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function formatTime(isoString) {
+            if (!isoString) return 'Unknown';
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = (now - date) / 1000;
+
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        function formatThreatType(type) {
+            if (!type) return 'Unknown';
+            return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function formatEscalationPath(path) {
+            if (!path) return 'Unknown';
+            return path.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' → ');
+        }
+
+        // Auto-refresh
+        setInterval(() => {
+            if (activeSession && document.getElementById('statusText').textContent !== 'Idle') {
+                refreshThreats();
+                refreshStats();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

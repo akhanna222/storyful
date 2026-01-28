@@ -1,0 +1,21 @@
+# FastAPI and server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-dotenv==1.0.0
+
+# HTTP client for API calls
+httpx==0.26.0
+aiohttp==3.9.3
+
+# Twitter API
+tweepy==4.14.0
+
+# OpenAI and Anthropic for LLM agents
+openai==1.12.0
+anthropic==0.18.1
+
+# Data handling
+pydantic==2.5.3
+
+# Database (SQLite wrapper)
+aiosqlite==0.19.0
